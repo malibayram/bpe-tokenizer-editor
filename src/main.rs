@@ -71,6 +71,13 @@ fn main() -> Result<()> {
         } => {
             cmd_sync_short_tokens(&source, &target, &output, min_len, max_len, min_id, dry_run)?;
         }
+        Commands::Reindex {
+            input,
+            output,
+            dry_run,
+        } => {
+            cmd_reindex(&input, &output, dry_run)?;
+        }
     }
 
     Ok(())
@@ -533,6 +540,83 @@ fn cmd_sync_short_tokens(
 
     target_editor.save(output)?;
     println!("\nSaved to: {:?}", output);
+
+    Ok(())
+}
+
+fn cmd_reindex(input: &PathBuf, output: &PathBuf, dry_run: bool) -> Result<()> {
+    println!("Loading tokenizer from: {:?}", input);
+    let mut editor = BPETokenizerEditor::load(input)?;
+
+    println!("Vocab size: {}", editor.vocab_size());
+    println!("Merge count: {}", editor.merges_count());
+
+    // Check for gaps
+    let (has_gaps, total_gaps, min_id, max_id) = editor.check_vocab_gaps();
+
+    println!("\n=== Vocabulary ID Analysis ===");
+    println!("Current ID range: {} - {}", min_id, max_id);
+    println!(
+        "Expected dense range: 0 - {}",
+        editor.vocab_size().saturating_sub(1)
+    );
+
+    if has_gaps {
+        println!("Total gaps in ID space: {}", total_gaps);
+        if min_id > 0 {
+            println!(
+                "  - Gap at start (IDs 0-{}): {} unused IDs",
+                min_id - 1,
+                min_id
+            );
+        }
+        let internal_gaps = total_gaps - min_id as usize;
+        if internal_gaps > 0 {
+            println!("  - Internal gaps: {} unused IDs", internal_gaps);
+        }
+    } else {
+        println!("✓ Vocabulary IDs are already sequential (no gaps)");
+        if !dry_run {
+            // Still save in case user wants a copy
+            editor.save(output)?;
+            println!("\nSaved to: {:?}", output);
+        }
+        return Ok(());
+    }
+
+    if dry_run {
+        println!("\n[DRY RUN] No changes made.");
+        println!("Run without --dry-run to reindex the vocabulary.");
+        return Ok(());
+    }
+
+    println!("\n=== Reindexing Vocabulary ===");
+    let result = editor.reindex_vocab();
+
+    println!("\n=== Reindex Results ===");
+    println!("Vocab size: {}", result.vocab_size);
+    println!("Merges count: {}", result.merges_count);
+    println!(
+        "Old ID range: {} - {}",
+        result.old_min_id, result.old_max_id
+    );
+    println!(
+        "New ID range: {} - {}",
+        result.new_min_id, result.new_max_id
+    );
+    println!("IDs remapped: {}", result.ids_remapped);
+    println!("Gaps removed: {}", result.gaps_removed);
+
+    editor.save(output)?;
+    println!("\n✓ Saved reindexed tokenizer to: {:?}", output);
+
+    // Validate the result
+    let (still_has_gaps, _, _, _) = editor.check_vocab_gaps();
+    if still_has_gaps {
+        println!("⚠ Warning: Vocabulary still has gaps after reindexing");
+    } else {
+        println!("✓ Vocabulary IDs are now sequential");
+    }
 
     Ok(())
 }

@@ -93,6 +93,28 @@ pub struct PyTokenizerStats {
     pub length_distribution: Vec<(usize, usize)>,
 }
 
+/// Result of reindex operation
+#[pyclass(name = "ReindexResult")]
+#[derive(Clone)]
+pub struct PyReindexResult {
+    #[pyo3(get)]
+    pub vocab_size: usize,
+    #[pyo3(get)]
+    pub merges_count: usize,
+    #[pyo3(get)]
+    pub old_min_id: u32,
+    #[pyo3(get)]
+    pub old_max_id: u32,
+    #[pyo3(get)]
+    pub new_min_id: u32,
+    #[pyo3(get)]
+    pub new_max_id: u32,
+    #[pyo3(get)]
+    pub ids_remapped: usize,
+    #[pyo3(get)]
+    pub gaps_removed: usize,
+}
+
 #[pymethods]
 impl PyBPETokenizerEditor {
     /// Load a tokenizer from a JSON file
@@ -110,9 +132,8 @@ impl PyBPETokenizerEditor {
     #[pyo3(signature = (path))]
     fn new(path: &str) -> PyResult<Self> {
         let path_buf = PathBuf::from(path);
-        let inner = BPETokenizerEditor::load(&path_buf).map_err(|e| {
-            PyIOError::new_err(format!("Failed to load tokenizer: {}", e))
-        })?;
+        let inner = BPETokenizerEditor::load(&path_buf)
+            .map_err(|e| PyIOError::new_err(format!("Failed to load tokenizer: {}", e)))?;
         Ok(Self { inner })
     }
 
@@ -145,9 +166,9 @@ impl PyBPETokenizerEditor {
     #[pyo3(signature = (path))]
     fn save(&self, path: &str) -> PyResult<()> {
         let path_buf = PathBuf::from(path);
-        self.inner.save(&path_buf).map_err(|e| {
-            PyIOError::new_err(format!("Failed to save tokenizer: {}", e))
-        })
+        self.inner
+            .save(&path_buf)
+            .map_err(|e| PyIOError::new_err(format!("Failed to save tokenizer: {}", e)))
     }
 
     /// Export tokenizer to JSON string
@@ -247,8 +268,9 @@ impl PyBPETokenizerEditor {
     ///     TokenizerStats object with detailed statistics
     fn get_stats(&self) -> PyTokenizerStats {
         let vocab = &self.inner.tokenizer.model.vocab;
-        
-        let mut length_counts: std::collections::HashMap<usize, usize> = std::collections::HashMap::new();
+
+        let mut length_counts: std::collections::HashMap<usize, usize> =
+            std::collections::HashMap::new();
         let mut single_char_count = 0;
         let mut special_token_count = 0;
         let mut min_id = u32::MAX;
@@ -257,17 +279,17 @@ impl PyBPETokenizerEditor {
         for (token, &id) in vocab {
             let char_len = token.chars().count();
             *length_counts.entry(char_len).or_insert(0) += 1;
-            
+
             if char_len == 1 {
                 single_char_count += 1;
             }
-            
+
             if (token.starts_with('<') && token.ends_with('>'))
                 || (token.starts_with('[') && token.ends_with(']'))
             {
                 special_token_count += 1;
             }
-            
+
             min_id = min_id.min(id);
             max_id = max_id.max(id);
         }
@@ -292,7 +314,7 @@ impl PyBPETokenizerEditor {
     ///     ValidationResult with valid/invalid merge counts and details
     fn validate_merges(&self) -> PyValidationResult {
         let (valid_indices, invalid) = self.inner.validate_merges();
-        
+
         let invalid_merges: Vec<(usize, String, String)> = invalid
             .iter()
             .map(|(idx, merge)| (*idx, merge.0.clone(), merge.1.clone()))
@@ -482,9 +504,8 @@ impl PyBPETokenizerEditor {
     #[pyo3(signature = (source_path, min_id = 0))]
     fn sync_single_chars(&mut self, source_path: &str, min_id: u32) -> PyResult<Py<PyDict>> {
         let source_path_buf = PathBuf::from(source_path);
-        let source = BPETokenizerEditor::load(&source_path_buf).map_err(|e| {
-            PyIOError::new_err(format!("Failed to load source tokenizer: {}", e))
-        })?;
+        let source = BPETokenizerEditor::load(&source_path_buf)
+            .map_err(|e| PyIOError::new_err(format!("Failed to load source tokenizer: {}", e)))?;
 
         let source_chars = source.get_single_char_tokens();
         let result = self.inner.sync_single_chars(&source_chars, min_id);
@@ -555,6 +576,39 @@ impl PyBPETokenizerEditor {
         })
     }
 
+    /// Check if vocabulary has gaps in its ID space
+    ///
+    /// Returns:
+    ///     Tuple of (has_gaps, total_gaps, min_id, max_id)
+    fn check_vocab_gaps(&self) -> (bool, usize, u32, u32) {
+        self.inner.check_vocab_gaps()
+    }
+
+    /// Reindex vocabulary to make all IDs sequential
+    ///
+    /// This removes all gaps in the vocabulary IDs, creating a dense/compact
+    /// ID space. Tokens that already have correct sequential IDs (starting from 0)
+    /// are preserved - only tokens after the first gap are remapped.
+    ///
+    /// Note: Merges don't contain IDs, they reference token strings,
+    /// so they don't need to be updated.
+    ///
+    /// Returns:
+    ///     ReindexResult with details about the reindexing operation
+    fn reindex_vocab(&mut self) -> PyReindexResult {
+        let result = self.inner.reindex_vocab();
+        PyReindexResult {
+            vocab_size: result.vocab_size,
+            merges_count: result.merges_count,
+            old_min_id: result.old_min_id,
+            old_max_id: result.old_max_id,
+            new_min_id: result.new_min_id,
+            new_max_id: result.new_max_id,
+            ids_remapped: result.ids_remapped,
+            gaps_removed: result.gaps_removed,
+        }
+    }
+
     fn __repr__(&self) -> String {
         format!(
             "BPETokenizerEditor(vocab_size={}, merges_count={})",
@@ -578,9 +632,10 @@ pub fn bpe_tokenizer_editor(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyRemovalResult>()?;
     m.add_class::<PyShrinkResult>()?;
     m.add_class::<PyTokenizerStats>()?;
-    
+    m.add_class::<PyReindexResult>()?;
+
     // Add version info
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
-    
+
     Ok(())
 }

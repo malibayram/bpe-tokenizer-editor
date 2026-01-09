@@ -139,6 +139,49 @@ class TokenizerStats:
         """List of (char_length, count) pairs sorted by length."""
         ...
 
+class ReindexResult:
+    """Result of vocabulary reindexing operation."""
+    
+    @property
+    def vocab_size(self) -> int:
+        """Total vocabulary size."""
+        ...
+    
+    @property
+    def merges_count(self) -> int:
+        """Total number of merges."""
+        ...
+    
+    @property
+    def old_min_id(self) -> int:
+        """Minimum token ID before reindexing."""
+        ...
+    
+    @property
+    def old_max_id(self) -> int:
+        """Maximum token ID before reindexing."""
+        ...
+    
+    @property
+    def new_min_id(self) -> int:
+        """Minimum token ID after reindexing (always 0)."""
+        ...
+    
+    @property
+    def new_max_id(self) -> int:
+        """Maximum token ID after reindexing (vocab_size - 1)."""
+        ...
+    
+    @property
+    def ids_remapped(self) -> int:
+        """Number of token IDs that were changed."""
+        ...
+    
+    @property
+    def gaps_removed(self) -> int:
+        """Number of gaps removed from the ID space."""
+        ...
+
 class BPETokenizerEditor:
     """
     High-performance editor for HuggingFace BPE tokenizer.json files.
@@ -446,6 +489,31 @@ class BPETokenizerEditor:
             
         Returns:
             Dictionary with operation details
+        """
+        ...
+    
+    def check_vocab_gaps(self) -> Tuple[bool, int, int, int]:
+        """
+        Check if vocabulary has gaps in its ID space.
+        
+        Returns:
+            Tuple of (has_gaps, total_gaps, min_id, max_id)
+        """
+        ...
+    
+    def reindex_vocab(self) -> ReindexResult:
+        """
+        Reindex vocabulary to make all IDs sequential.
+        
+        This removes all gaps in the vocabulary IDs, creating a dense/compact
+        ID space. Tokens that already have correct sequential IDs (starting from 0)
+        are preserved - only tokens after the first gap are remapped.
+        
+        Note: Merges don't contain IDs, they reference token strings,
+        so they don't need to be updated.
+        
+        Returns:
+            ReindexResult with details about the reindexing operation
         """
         ...
     

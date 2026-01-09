@@ -1,10 +1,10 @@
 """Tests for bpe_tokenizer_editor Python bindings."""
 
 import json
-import tempfile
 import os
-import pytest
+import tempfile
 
+import pytest
 
 # Sample minimal tokenizer for testing
 SAMPLE_TOKENIZER = {

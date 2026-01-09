@@ -164,4 +164,19 @@ pub enum Commands {
         #[arg(long)]
         save_report: Option<PathBuf>,
     },
+
+    /// Reindex vocabulary to make all IDs sequential (removes gaps)
+    Reindex {
+        /// Input tokenizer.json file
+        #[arg(short, long)]
+        input: PathBuf,
+
+        /// Output tokenizer.json file
+        #[arg(short, long)]
+        output: PathBuf,
+
+        /// Dry run - only report gaps without fixing
+        #[arg(long, default_value = "false")]
+        dry_run: bool,
+    },
 }

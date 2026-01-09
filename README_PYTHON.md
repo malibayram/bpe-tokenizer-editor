@@ -14,6 +14,7 @@ A high-performance Python library for editing HuggingFace BPE tokenizer.json fil
 - ✅ **Shrink vocab** - Remove N longest tokens to reduce vocabulary size
 - ✅ **Sync single-chars** - Copy all single-character tokens from source tokenizer
 - ✅ **Keep vocab size fixed** - Add tokens while automatically removing others to maintain size
+- ✅ **Reindex vocab** - Make vocabulary IDs sequential by removing gaps
 - 🚀 **Rust-powered** - Native performance with Python convenience
 
 ## Installation
@@ -191,6 +192,26 @@ print(f"Chars added: {result['chars_added_count']}")
 print(f"Tokens removed: {result['total_tokens_removed']}")
 ```
 
+### Reindexing Vocabulary
+
+After sync operations or modifications, vocabulary IDs may have gaps (e.g., IDs jump from 73000 to 74000). This creates a sparse vocabulary. Use reindex to make all IDs sequential:
+
+```python
+# Check for gaps in vocabulary IDs
+has_gaps, total_gaps, min_id, max_id = editor.check_vocab_gaps()
+if has_gaps:
+    print(f"Found {total_gaps} gaps in ID space (range: {min_id}-{max_id})")
+
+# Reindex to make IDs sequential
+result = editor.reindex_vocab()
+print(f"Remapped {result.ids_remapped} IDs")
+print(f"Removed {result.gaps_removed} gaps")
+print(f"New ID range: {result.new_min_id} - {result.new_max_id}")
+```
+
+**Note:** The `sync_single_chars` method automatically calls `reindex_vocab` after completing, so you typically don't need to call it manually after syncing.
+```
+
 ## Examples
 
 ### Training a Domain-Specific Tokenizer
@@ -273,13 +294,13 @@ editor.save("tokenizer_with_custom_tokens.json")
 
 The library is written in Rust and compiled to native code, providing excellent performance:
 
-| Operation | Time (256K vocab) |
-|-----------|-------------------|
-| Load tokenizer | ~50ms |
-| Validate merges | ~100ms |
-| Get stats | ~50ms |
-| Shrink 1000 tokens | 2-5s |
-| Sync 18K chars | 30-60s |
+| Operation          | Time (256K vocab) |
+| ------------------ | ----------------- |
+| Load tokenizer     | ~50ms             |
+| Validate merges    | ~100ms            |
+| Get stats          | ~50ms             |
+| Shrink 1000 tokens | 2-5s              |
+| Sync 18K chars     | 30-60s            |
 
 ## Building from Source
 

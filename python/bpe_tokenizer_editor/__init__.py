@@ -12,15 +12,9 @@ Example:
     >>> editor.save("tokenizer_modified.json")
 """
 
-from .bpe_tokenizer_editor import (
-    BPETokenizerEditor,
-    ValidationResult,
-    AdditionResult,
-    RemovalResult,
-    ShrinkResult,
-    TokenizerStats,
-    __version__,
-)
+from .bpe_tokenizer_editor import (AdditionResult, BPETokenizerEditor,
+                                   RemovalResult, ShrinkResult, TokenizerStats,
+                                   ValidationResult, __version__)
 
 __all__ = [
     "BPETokenizerEditor",

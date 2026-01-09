@@ -11,6 +11,7 @@ A high-performance Rust tool for editing HuggingFace BPE tokenizer.json files wi
 - ✅ **Sync single-chars** - Copy all single-character tokens from source tokenizer
 - ✅ **Sync short tokens** - Copy 2-3 letter tokens with their merges from source
 - ✅ **Keep vocab size fixed** - Add tokens while automatically removing others to maintain size
+- ✅ **Reindex vocab** - Make vocabulary IDs sequential by removing gaps
 
 ## Installation
 
@@ -187,6 +188,33 @@ bpe-editor sync-short-tokens \
 **Why include merges?**
 Short tokens like `ab` need merge rules (`a + b -> ab`) to be created during tokenization. This command copies both the tokens AND their producing merges from the source.
 
+### Reindex Vocabulary
+
+After sync operations or other modifications, vocabulary IDs may have gaps (e.g., IDs jump from 73000 to 74000). This creates a sparse vocabulary which is inefficient. Use the reindex command to make all IDs sequential:
+
+```bash
+# Preview what would be reindexed
+bpe-editor reindex \
+  --input tokenizer.json \
+  --output tokenizer_reindexed.json \
+  --dry-run
+
+# Perform reindexing
+bpe-editor reindex \
+  --input tokenizer.json \
+  --output tokenizer_reindexed.json
+```
+
+**What it does:**
+
+1. Sorts all tokens by their current ID to preserve relative ordering
+2. Finds the first gap in the ID sequence
+3. Tokens before the gap keep their original IDs
+4. Tokens after the gap are remapped to fill the gaps
+5. Result: IDs go from 0 to vocab_size-1 with no gaps
+
+**Note:** Merges reference token strings (not IDs), so they don't need updating. The sync commands (`sync-chars` and `sync-short-tokens`) automatically call reindex after completing.
+
 ## Architecture
 
 The project is organized into focused modules:
@@ -205,7 +233,8 @@ src/
     ├── removal.rs      # Token removal with cascade
     ├── addition.rs     # Token addition with merge chains
     ├── management.rs   # Vocab size management, shrinking
-    └── sync.rs         # Cross-tokenizer sync operations
+    ├── sync.rs         # Cross-tokenizer sync operations
+    └── reindex.rs      # Vocabulary ID reindexing
 ```
 
 ### Key Data Structures

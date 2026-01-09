@@ -133,6 +133,14 @@ impl BPETokenizerEditor {
             elapsed
         );
 
+        // Phase 3: Reindex to remove gaps
+        eprintln!("\n   Phase 3: Reindexing vocabulary to remove ID gaps...");
+        let reindex_result = self.reindex_vocab();
+        eprintln!(
+            "   Reindexed {} IDs, removed {} gaps",
+            reindex_result.ids_remapped, reindex_result.gaps_removed
+        );
+
         result.final_vocab_size = self.vocab_size();
         result.final_merges_count = self.merges_count();
         result
@@ -299,6 +307,14 @@ impl BPETokenizerEditor {
             }
         }
         eprintln!();
+
+        // Phase 3: Reindex to remove gaps
+        eprintln!("\n   Phase 3: Reindexing vocabulary to remove ID gaps...");
+        let reindex_result = self.reindex_vocab();
+        eprintln!(
+            "   Reindexed {} IDs, removed {} gaps",
+            reindex_result.ids_remapped, reindex_result.gaps_removed
+        );
 
         result.final_vocab_size = self.vocab_size();
         result.final_merges_count = self.merges_count();
