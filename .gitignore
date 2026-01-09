@@ -1,0 +1,21 @@
+# rust related files
+/target/
+**/*.rs.bk
+**/*.rs.swp
+**/*.rs.swo
+**/*.rlib
+**/*.rmeta
+**/*.dSYM/
+**/*.cargo-lock
+**/Cargo.lock
+
+
+# IDE related files
+/.idea/
+*.iml
+.vscode/
+
+# OS generated files
+.DS_Store
+
+.env
