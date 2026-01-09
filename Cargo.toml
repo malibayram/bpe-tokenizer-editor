@@ -4,13 +4,26 @@ version = "0.1.0"
 edition = "2021"
 description = "BPE Tokenizer Editor - Add/Remove tokens with consistency guarantees"
 authors = ["Ali Bayram"]
+license = "MIT"
+repository = "https://github.com/malibayram/bpe-tokenizer-editor"
+keywords = ["tokenizer", "bpe", "nlp", "huggingface"]
+categories = ["text-processing", "science"]
+
+[lib]
+name = "bpe_tokenizer_editor"
+crate-type = ["cdylib", "rlib"]
 
 [[bin]]
 name = "bpe-editor"
 path = "src/main.rs"
+
+[features]
+default = []
+python = ["pyo3/extension-module"]
 
 [dependencies]
 anyhow = "1"
 clap = { version = "4", features = ["derive"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+pyo3 = { version = "0.22", optional = true }

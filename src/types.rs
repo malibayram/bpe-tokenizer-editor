@@ -105,3 +105,24 @@ pub struct SyncShortTokensResult {
     pub total_tokens_removed: usize,
     pub total_merges_removed: usize,
 }
+
+/// Information about an ID remapping
+#[derive(Debug, Clone, Serialize)]
+pub struct IdRemapInfo {
+    pub token: String,
+    pub old_id: u32,
+    pub new_id: u32,
+}
+
+/// Result of vocabulary reindexing
+#[derive(Debug, Serialize)]
+pub struct ReindexResult {
+    pub vocab_size: usize,
+    pub merges_count: usize,
+    pub old_min_id: u32,
+    pub old_max_id: u32,
+    pub new_min_id: u32,
+    pub new_max_id: u32,
+    pub ids_remapped: usize,
+    pub gaps_removed: usize,
+}

@@ -9,3 +9,10 @@ pub mod types;
 // Editor is split into submodules
 mod editor;
 pub use editor::BPETokenizerEditor;
+
+// Python bindings (only compiled with the python feature)
+#[cfg(feature = "python")]
+mod python;
+
+#[cfg(feature = "python")]
+pub use python::bpe_tokenizer_editor;

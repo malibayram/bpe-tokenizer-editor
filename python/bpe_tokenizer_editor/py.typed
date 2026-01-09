@@ -1,0 +1,2 @@
+# For maturin to find the native module
+from .bpe_tokenizer_editor import *
