@@ -184,7 +184,7 @@ mod tests {
             model: Model {
                 model_type: "BPE".to_string(),
                 dropout: None,
-                unk_token: "<unk>".to_string(),
+                unk_token: Some("<unk>".to_string()),
                 continuing_subword_prefix: None,
                 end_of_word_suffix: None,
                 fuse_unk: false,

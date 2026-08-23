@@ -76,6 +76,19 @@ class TestBPETokenizerEditor:
         json_str = json.dumps(SAMPLE_TOKENIZER)
         editor = BPETokenizerEditor.from_json(json_str)
         assert editor.vocab_size == 8
+
+    def test_load_with_null_unk_token(self):
+        """Modern BPE tokenizers may explicitly disable the unknown token."""
+        from bpe_tokenizer_editor import BPETokenizerEditor
+
+        tokenizer = json.loads(json.dumps(SAMPLE_TOKENIZER))
+        tokenizer["model"]["unk_token"] = None
+
+        editor = BPETokenizerEditor.from_json(json.dumps(tokenizer))
+        serialized = json.loads(editor.to_json())
+
+        assert editor.vocab_size == 8
+        assert serialized["model"]["unk_token"] is None
     
     def test_save_and_reload(self, editor):
         """Test saving and reloading tokenizer."""

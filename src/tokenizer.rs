@@ -23,11 +23,14 @@ pub struct Model {
     #[serde(rename = "type")]
     pub model_type: String,
     pub dropout: Option<f64>,
-    pub unk_token: String,
+    pub unk_token: Option<String>,
     pub continuing_subword_prefix: Option<String>,
     pub end_of_word_suffix: Option<String>,
+    #[serde(default)]
     pub fuse_unk: bool,
+    #[serde(default)]
     pub byte_fallback: bool,
+    #[serde(default)]
     pub ignore_merges: bool,
     pub vocab: BTreeMap<String, u32>,
     pub merges: Vec<Merge>,
@@ -69,5 +72,42 @@ impl<'de> Deserialize<'de> for Merge {
             ));
         }
         Ok(Merge(v[0].clone(), v[1].clone()))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Tokenizer;
+
+    #[test]
+    fn nullable_unk_token_round_trips() {
+        let input = r#"{
+            "version": "1.0",
+            "truncation": null,
+            "padding": null,
+            "added_tokens": [],
+            "normalizer": null,
+            "pre_tokenizer": null,
+            "post_processor": null,
+            "decoder": null,
+            "model": {
+                "type": "BPE",
+                "dropout": null,
+                "unk_token": null,
+                "continuing_subword_prefix": null,
+                "end_of_word_suffix": null,
+                "vocab": {"a": 0, "b": 1, "ab": 2},
+                "merges": [["a", "b"]]
+            }
+        }"#;
+
+        let tokenizer: Tokenizer = serde_json::from_str(input).unwrap();
+        assert_eq!(tokenizer.model.unk_token, None);
+        assert!(!tokenizer.model.fuse_unk);
+        assert!(!tokenizer.model.byte_fallback);
+        assert!(!tokenizer.model.ignore_merges);
+
+        let serialized = serde_json::to_value(tokenizer).unwrap();
+        assert!(serialized["model"]["unk_token"].is_null());
     }
 }
