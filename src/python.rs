@@ -2,12 +2,11 @@
 
 use pyo3::exceptions::{PyIOError, PyValueError};
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyList};
+use pyo3::types::PyDict;
 use std::collections::HashSet;
 use std::path::PathBuf;
 
 use crate::editor::BPETokenizerEditor;
-use crate::tokenizer::Merge;
 
 /// Python wrapper for BPETokenizerEditor
 #[pyclass(name = "BPETokenizerEditor")]
@@ -240,7 +239,7 @@ impl PyBPETokenizerEditor {
     ///     Dictionary mapping token strings to their IDs
     fn get_vocab(&self) -> PyResult<Py<PyDict>> {
         Python::with_gil(|py| {
-            let dict = PyDict::new(py);
+            let dict = PyDict::new_bound(py);
             for (token, id) in &self.inner.tokenizer.model.vocab {
                 dict.set_item(token, *id)?;
             }
@@ -511,7 +510,7 @@ impl PyBPETokenizerEditor {
         let result = self.inner.sync_single_chars(&source_chars, min_id);
 
         Python::with_gil(|py| {
-            let dict = PyDict::new(py);
+            let dict = PyDict::new_bound(py);
             dict.set_item("initial_vocab_size", result.initial_vocab_size)?;
             dict.set_item("final_vocab_size", result.final_vocab_size)?;
             dict.set_item("chars_in_source", result.chars_in_source)?;
@@ -566,7 +565,7 @@ impl PyBPETokenizerEditor {
         }
 
         Python::with_gil(|py| {
-            let dict = PyDict::new(py);
+            let dict = PyDict::new_bound(py);
             dict.set_item("initial_vocab_size", initial_size)?;
             dict.set_item("final_vocab_size", self.inner.vocab_size())?;
             dict.set_item("tokens_requested", tokens.len())?;

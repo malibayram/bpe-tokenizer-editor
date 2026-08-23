@@ -9,7 +9,7 @@ description = "High-performance BPE tokenizer editor for HuggingFace tokenizer.j
 readme = "README_PYTHON.md"
 license = {text = "MIT"}
 authors = [
-    {name = "Ali Bayram", email = ""}
+    {name = "Ali Bayram"}
 ]
 keywords = ["tokenizer", "bpe", "nlp", "huggingface", "transformers", "machine-learning"]
 classifiers = [
@@ -46,7 +46,7 @@ dev = [
 # Build settings
 features = ["python"]
 python-source = "python"
-module-name = "bpe_tokenizer_editor"
+module-name = "bpe_tokenizer_editor.bpe_tokenizer_editor"
 bindings = "pyo3"
 strip = true
 
@@ -55,9 +55,18 @@ include = [
     {path = "README_PYTHON.md", format = "sdist"},
     {path = "LICENSE", format = "sdist"},
 ]
+exclude = [
+    "deneme.ipynb",
+    "magibu-64-tokenizer.json",
+    "tokenizers/**",
+]
 
 # Compatibility settings
 compatibility = "manylinux2014"
+
+[tool.maturin.generate-ci.github]
+trusted-publishing = true
+publishing-environment = "pypi"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
