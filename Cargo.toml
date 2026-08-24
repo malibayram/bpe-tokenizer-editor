@@ -1,6 +1,6 @@
 [package]
 name = "bpe-tokenizer-editor"
-version = "0.1.1"
+version = "0.2.0"
 edition = "2021"
 description = "BPE Tokenizer Editor - Add/Remove tokens with consistency guarantees"
 authors = ["Ali Bayram"]
@@ -26,4 +26,5 @@ anyhow = "1"
 clap = { version = "4", features = ["derive"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+unicode-normalization = "0.1"
 pyo3 = { version = "0.22", optional = true, features = ["abi3-py38"] }

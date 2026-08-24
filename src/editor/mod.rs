@@ -3,6 +3,7 @@
 mod addition;
 mod core;
 mod management;
+mod merge;
 mod reindex;
 mod removal;
 mod sync;

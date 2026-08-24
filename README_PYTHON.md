@@ -13,6 +13,7 @@ A high-performance Python library for editing HuggingFace BPE tokenizer.json fil
 - ✅ **Remove tokens** - Remove tokens with cascade deletion of dependent merges
 - ✅ **Shrink vocab** - Remove N longest tokens to reduce vocabulary size
 - ✅ **Sync single-chars** - Copy all single-character tokens from source tokenizer
+- ✅ **Merge tokenizers** - Convert source tokens to the target byte format and prioritize their merges
 - ✅ **Keep vocab size fixed** - Add tokens while automatically removing others to maintain size
 - ✅ **Reindex vocab** - Make vocabulary IDs sequential by removing gaps
 - 🚀 **Rust-powered** - Native performance with Python convenience
@@ -99,6 +100,26 @@ merges = editor.get_merges()  # Returns List[Tuple[str, str]]
 # Get single-character tokens
 single_chars = editor.get_single_char_tokens()  # Returns List[Tuple[str, int]]
 ```
+
+### Merging Tokenizers
+
+```python
+# The editor is the target tokenizer whose configuration is preserved.
+editor = BPETokenizerEditor("target-tokenizer.json")
+result = editor.merge_from(
+    "source-tokenizer.json",
+    max_vocab_size=2**18,
+)
+editor.save("merged-tokenizer.json")
+
+print(result.representation)       # "ByteLevel (Ġ)" or "space marker (▁)"
+print(result.tokens_injected)
+print(result.final_vocab_size)     # Includes added/special tokens
+```
+
+`merge_from` converts source tokens to the target tokenizer's native internal
+representation, adds any required UTF-8 byte bridges, and ranks source merges
+before original target merges. Source-specific added/special tokens are not injected.
 
 ### Statistics
 

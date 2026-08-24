@@ -165,6 +165,25 @@ pub enum Commands {
         save_report: Option<PathBuf>,
     },
 
+    /// Merge a source tokenizer into a target using the target's native byte format
+    Merge {
+        /// Source tokenizer.json file (tokens and high-priority merges)
+        #[arg(short, long)]
+        source: PathBuf,
+
+        /// Target tokenizer.json file (configuration and retained vocabulary)
+        #[arg(short, long)]
+        target: PathBuf,
+
+        /// Output tokenizer.json file
+        #[arg(short, long)]
+        output: PathBuf,
+
+        /// Maximum complete vocabulary size, including added tokens
+        #[arg(long, default_value_t = 262_144)]
+        max_vocab_size: usize,
+    },
+
     /// Reindex vocabulary to make all IDs sequential (removes gaps)
     Reindex {
         /// Input tokenizer.json file

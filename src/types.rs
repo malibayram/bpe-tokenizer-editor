@@ -2,6 +2,22 @@
 
 use serde::Serialize;
 
+/// Result of merging a source tokenizer into a target tokenizer
+#[derive(Debug, Clone, Serialize)]
+pub struct MergeTokenizerResult {
+    pub initial_target_vocab_size: usize,
+    pub source_vocab_size: usize,
+    pub final_model_vocab_size: usize,
+    pub final_vocab_size: usize,
+    pub tokens_injected: usize,
+    pub target_tokens_removed: usize,
+    pub bridge_tokens_added: usize,
+    pub bridge_merges_added: usize,
+    pub source_merges_added: usize,
+    pub target_merges_retained: usize,
+    pub representation: String,
+}
+
 /// Information about a token removal
 #[derive(Debug, Clone, Serialize)]
 pub struct TokenRemovalInfo {

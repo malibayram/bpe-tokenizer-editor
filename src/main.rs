@@ -71,6 +71,14 @@ fn main() -> Result<()> {
         } => {
             cmd_sync_short_tokens(&source, &target, &output, min_len, max_len, min_id, dry_run)?;
         }
+        Commands::Merge {
+            source,
+            target,
+            output,
+            max_vocab_size,
+        } => {
+            cmd_merge(&source, &target, &output, max_vocab_size)?;
+        }
         Commands::Reindex {
             input,
             output,
@@ -79,6 +87,40 @@ fn main() -> Result<()> {
             cmd_reindex(&input, &output, dry_run)?;
         }
     }
+
+    Ok(())
+}
+
+fn cmd_merge(
+    source: &PathBuf,
+    target: &PathBuf,
+    output: &PathBuf,
+    max_vocab_size: usize,
+) -> Result<()> {
+    println!("Loading source tokenizer from: {:?}", source);
+    let source_editor = BPETokenizerEditor::load(source)?;
+
+    println!("Loading target tokenizer from: {:?}", target);
+    let mut target_editor = BPETokenizerEditor::load(target)?;
+
+    let result = target_editor.merge_from(&source_editor.tokenizer, max_vocab_size)?;
+    target_editor.save(output)?;
+
+    println!("\n=== Merge Results ===");
+    println!("Representation: {}", result.representation);
+    println!("Source model vocab: {}", result.source_vocab_size);
+    println!(
+        "Target model vocab: {} -> {}",
+        result.initial_target_vocab_size, result.final_model_vocab_size
+    );
+    println!("Complete vocab: {}", result.final_vocab_size);
+    println!("Tokens injected: {}", result.tokens_injected);
+    println!("Target tokens removed: {}", result.target_tokens_removed);
+    println!("Byte bridge tokens: {}", result.bridge_tokens_added);
+    println!("Byte bridge merges: {}", result.bridge_merges_added);
+    println!("Source merges: {}", result.source_merges_added);
+    println!("Target merges retained: {}", result.target_merges_retained);
+    println!("\nSaved to: {:?}", output);
 
     Ok(())
 }

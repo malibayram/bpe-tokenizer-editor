@@ -101,6 +101,42 @@ class ShrinkResult:
         """Total merges removed."""
         ...
 
+class MergeTokenizerResult:
+    """Result of merging a source tokenizer into a target tokenizer."""
+
+    @property
+    def initial_target_vocab_size(self) -> int: ...
+
+    @property
+    def source_vocab_size(self) -> int: ...
+
+    @property
+    def final_model_vocab_size(self) -> int: ...
+
+    @property
+    def final_vocab_size(self) -> int: ...
+
+    @property
+    def tokens_injected(self) -> int: ...
+
+    @property
+    def target_tokens_removed(self) -> int: ...
+
+    @property
+    def bridge_tokens_added(self) -> int: ...
+
+    @property
+    def bridge_merges_added(self) -> int: ...
+
+    @property
+    def source_merges_added(self) -> int: ...
+
+    @property
+    def target_merges_retained(self) -> int: ...
+
+    @property
+    def representation(self) -> str: ...
+
 class TokenizerStats:
     """Comprehensive tokenizer statistics."""
     
@@ -342,6 +378,24 @@ class BPETokenizerEditor:
         
         Returns:
             Number of invalid merges removed
+        """
+        ...
+
+    def merge_from(
+        self, source_path: str, max_vocab_size: int = 262144
+    ) -> MergeTokenizerResult:
+        """
+        Merge a source tokenizer into this target tokenizer.
+
+        Source tokens are converted to the target tokenizer's native byte
+        representation and source merges receive higher priority.
+
+        Args:
+            source_path: Path to the source tokenizer.json file.
+            max_vocab_size: Complete vocabulary cap, including added tokens.
+
+        Returns:
+            MergeTokenizerResult with merge statistics.
         """
         ...
     

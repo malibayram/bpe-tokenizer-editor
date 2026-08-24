@@ -37,7 +37,7 @@ pub struct Model {
 }
 
 /// A BPE merge rule (pair of tokens)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Merge(pub String, pub String);
 
 impl Merge {

@@ -72,6 +72,34 @@ pub struct PyShrinkResult {
     pub total_merges_removed: usize,
 }
 
+/// Result of merging a source tokenizer into a target tokenizer
+#[pyclass(name = "MergeTokenizerResult")]
+#[derive(Clone)]
+pub struct PyMergeTokenizerResult {
+    #[pyo3(get)]
+    pub initial_target_vocab_size: usize,
+    #[pyo3(get)]
+    pub source_vocab_size: usize,
+    #[pyo3(get)]
+    pub final_model_vocab_size: usize,
+    #[pyo3(get)]
+    pub final_vocab_size: usize,
+    #[pyo3(get)]
+    pub tokens_injected: usize,
+    #[pyo3(get)]
+    pub target_tokens_removed: usize,
+    #[pyo3(get)]
+    pub bridge_tokens_added: usize,
+    #[pyo3(get)]
+    pub bridge_merges_added: usize,
+    #[pyo3(get)]
+    pub source_merges_added: usize,
+    #[pyo3(get)]
+    pub target_merges_retained: usize,
+    #[pyo3(get)]
+    pub representation: String,
+}
+
 /// Tokenizer statistics
 #[pyclass(name = "TokenizerStats")]
 #[derive(Clone)]
@@ -332,6 +360,47 @@ impl PyBPETokenizerEditor {
     ///     Number of invalid merges removed
     fn remove_invalid_merges(&mut self) -> usize {
         self.inner.remove_invalid_merges()
+    }
+
+    /// Merge a source tokenizer into this target tokenizer.
+    ///
+    /// Source tokens are converted to this tokenizer's native ByteLevel or
+    /// space-marker representation. Source merges receive higher priority than
+    /// original target merges.
+    ///
+    /// Args:
+    ///     source_path: Path to the source tokenizer.json file
+    ///     max_vocab_size: Maximum complete vocabulary size, including added tokens
+    ///
+    /// Returns:
+    ///     MergeTokenizerResult with merge statistics
+    #[pyo3(signature = (source_path, max_vocab_size = 262_144))]
+    fn merge_from(
+        &mut self,
+        source_path: &str,
+        max_vocab_size: usize,
+    ) -> PyResult<PyMergeTokenizerResult> {
+        let source_path_buf = PathBuf::from(source_path);
+        let source = BPETokenizerEditor::load(&source_path_buf)
+            .map_err(|e| PyIOError::new_err(format!("Failed to load source tokenizer: {}", e)))?;
+        let result = self
+            .inner
+            .merge_from(&source.tokenizer, max_vocab_size)
+            .map_err(|e| PyValueError::new_err(format!("Failed to merge tokenizer: {}", e)))?;
+
+        Ok(PyMergeTokenizerResult {
+            initial_target_vocab_size: result.initial_target_vocab_size,
+            source_vocab_size: result.source_vocab_size,
+            final_model_vocab_size: result.final_model_vocab_size,
+            final_vocab_size: result.final_vocab_size,
+            tokens_injected: result.tokens_injected,
+            target_tokens_removed: result.target_tokens_removed,
+            bridge_tokens_added: result.bridge_tokens_added,
+            bridge_merges_added: result.bridge_merges_added,
+            source_merges_added: result.source_merges_added,
+            target_merges_retained: result.target_merges_retained,
+            representation: result.representation,
+        })
     }
 
     /// Add a token with proper merge chain creation
@@ -630,6 +699,7 @@ pub fn bpe_tokenizer_editor(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyAdditionResult>()?;
     m.add_class::<PyRemovalResult>()?;
     m.add_class::<PyShrinkResult>()?;
+    m.add_class::<PyMergeTokenizerResult>()?;
     m.add_class::<PyTokenizerStats>()?;
     m.add_class::<PyReindexResult>()?;
 

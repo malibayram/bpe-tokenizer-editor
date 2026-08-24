@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "bpe-tokenizer-editor"
-version = "0.1.1"
+version = "0.2.0"
 description = "High-performance BPE tokenizer editor for HuggingFace tokenizer.json files"
 readme = "README_PYTHON.md"
 license = {text = "MIT"}

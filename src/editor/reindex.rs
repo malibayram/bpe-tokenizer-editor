@@ -106,7 +106,15 @@ impl BPETokenizerEditor {
         for id in self.tokenizer.model.vocab.values() {
             self.used_ids.insert(*id);
         }
-        self.next_id = vocab_size as u32;
+        self.used_ids.extend(
+            self.tokenizer
+                .added_tokens
+                .iter()
+                .filter_map(|item| item.get("id"))
+                .filter_map(serde_json::Value::as_u64)
+                .filter_map(|id| u32::try_from(id).ok()),
+        );
+        self.next_id = self.used_ids.iter().max().copied().unwrap_or(0) + 1;
 
         // New ID range
         let new_min_id = 0;

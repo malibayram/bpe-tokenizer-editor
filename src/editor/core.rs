@@ -20,7 +20,15 @@ pub struct BPETokenizerEditor {
 impl BPETokenizerEditor {
     /// Create a new editor from a Tokenizer
     pub fn new(tokenizer: Tokenizer) -> Self {
-        let used_ids: HashSet<u32> = tokenizer.model.vocab.values().copied().collect();
+        let mut used_ids: HashSet<u32> = tokenizer.model.vocab.values().copied().collect();
+        used_ids.extend(
+            tokenizer
+                .added_tokens
+                .iter()
+                .filter_map(|item| item.get("id"))
+                .filter_map(serde_json::Value::as_u64)
+                .filter_map(|id| u32::try_from(id).ok()),
+        );
         let next_id = used_ids.iter().max().copied().unwrap_or(0) + 1;
 
         let mut editor = Self {
@@ -107,5 +115,39 @@ impl BPETokenizerEditor {
 
     pub(crate) fn release_id(&mut self, id: u32) {
         self.used_ids.remove(&id);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn added_token_ids_are_reserved_for_future_model_tokens() {
+        let tokenizer: Tokenizer = serde_json::from_value(serde_json::json!({
+            "version": "1.0",
+            "truncation": null,
+            "padding": null,
+            "added_tokens": [{"id": 1, "content": "<special>", "special": true}],
+            "normalizer": null,
+            "pre_tokenizer": null,
+            "post_processor": null,
+            "decoder": null,
+            "model": {
+                "type": "BPE",
+                "dropout": null,
+                "unk_token": null,
+                "continuing_subword_prefix": null,
+                "end_of_word_suffix": null,
+                "vocab": {"a": 0},
+                "merges": []
+            }
+        }))
+        .unwrap();
+        let mut editor = BPETokenizerEditor::new(tokenizer);
+
+        editor.add_token_atomic("b");
+
+        assert_eq!(editor.tokenizer.model.vocab["b"], 2);
     }
 }
